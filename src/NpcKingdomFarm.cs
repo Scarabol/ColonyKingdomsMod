@@ -54,7 +54,8 @@ namespace ScarabolMods
 
     void CheckFollower ()
     {
-      for (int c = Colony.FollowerCount; c < Size; c++) {
+      int maxFollower = Math.Min (Size, BedBlockTracker.GetCount (Player));
+      for (int c = Colony.FollowerCount; c < maxFollower; c++) {
         SpawnNpc ();
       }
     }

@@ -6,7 +6,7 @@ namespace ScarabolMods
 {
   public class NpcFarmBuilder
   {
-    public static readonly int MAX_SIZE = 9;
+    public static readonly int MAX_SIZE = 8;
 
     readonly Players.Player Owner;
     readonly Vector3Int FarmOrigin;

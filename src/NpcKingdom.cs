@@ -54,7 +54,7 @@ namespace ScarabolMods
       kingdomNode.SetAs ("KingdomType", KingdomType);
       kingdomNode.SetAs ("NpcID", NpcID);
       kingdomNode.SetAs ("Name", Player.Name);
-      kingdomNode.SetAs ("Origin", Origin);
+      kingdomNode.SetAs ("Origin", (JSONNode)Origin);
       return kingdomNode;
     }
 
@@ -68,7 +68,10 @@ namespace ScarabolMods
       if (jsonNode.TryGetAs ("Name", out name)) {
         Player.Name = name;
       }
-      jsonNode.TryGetAs ("Origin", out Origin);
+      JSONNode jsonOrigin;
+      if (jsonNode.TryGetAs ("Origin", out jsonOrigin)) {
+        Origin = (Vector3Int)jsonOrigin;
+      }
     }
 
     public void StartThread ()
@@ -80,7 +83,7 @@ namespace ScarabolMods
           try {
             Update ();
           } catch (Exception exception) {
-            Log.WriteError ($"Exception in kingdom thread; {exception.Message}");
+            Log.WriteError ($"Exception in kingdom update thread; {exception.Message}");
           }
           Thread.Sleep (5000);
         }

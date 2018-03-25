@@ -5,6 +5,7 @@ using Pipliz.JSON;
 
 namespace ScarabolMods
 {
+  [ModLoader.ModManager]
   public static class KingdomsTracker
   {
     static uint NextID = 742000000;
@@ -28,19 +29,21 @@ namespace ScarabolMods
       }
     }
 
+    [ModLoader.ModCallback (ModLoader.EModCallbackType.AfterNetworkSetup, "scarabol.kingdoms.afternetworksetup")]
     public static void Load ()
     {
       try {
         JSONNode json;
         if (JSON.Deserialize (JsonFilePath, out json, false)) {
+          kingdoms.Clear ();
           JSONNode jsonKingdoms;
           if (!json.TryGetAs ("kingdoms", out jsonKingdoms) || jsonKingdoms.NodeType != NodeType.Array) {
-            Pipliz.Log.WriteError ("No 'kingdoms' array found in kingdoms.json");
+            Pipliz.Log.WriteError ($"No 'kingdoms' array found in '{JsonFilePath}'");
             return;
           }
           foreach (JSONNode jsonNode in jsonKingdoms.LoopArray ()) {
             string type;
-            if (jsonNode.TryGetAs ("type", out type)) {
+            if (jsonNode.TryGetAs ("KingdomType", out type)) {
               NpcKingdom kingdom;
               if ("farm".Equals (type)) {
                 kingdom = new NpcKingdomFarm ();
@@ -52,12 +55,15 @@ namespace ScarabolMods
               NextID = Math.Max (NextID, kingdom.NpcID);
             }
           }
+          Pipliz.Log.Write ($"Loaded {kingdoms.Count} kingdoms from json");
         }
       } catch (Exception exception) {
         Pipliz.Log.WriteError (string.Format ("Exception while loading kingdoms; {0}", exception.Message));
       }
     }
 
+    [ModLoader.ModCallback (ModLoader.EModCallbackType.OnAutoSaveWorld, "scarabol.kingdoms.onautosaveworld")]
+    [ModLoader.ModCallback (ModLoader.EModCallbackType.OnQuitEarly, "scarabol.kingdoms.onquitearly")]
     public static void Save ()
     {
       try {
@@ -68,6 +74,7 @@ namespace ScarabolMods
         JSONNode jsonFileNode = new JSONNode ();
         jsonFileNode.SetAs ("kingdoms", jsonKingdoms);
         JSON.Serialize (JsonFilePath, jsonFileNode, 2);
+        Pipliz.Log.Write ($"Saved {kingdoms.Count} kingdoms to json");
       } catch (Exception exception) {
         Pipliz.Log.WriteError (string.Format ("Exception while saving kingdoms; {0}", exception.Message));
       }

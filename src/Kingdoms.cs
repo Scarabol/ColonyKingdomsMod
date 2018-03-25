@@ -19,18 +19,5 @@ namespace ScarabolMods
     {
       Pipliz.Log.Write ("Loaded Kingdoms Mod 6.0.2 by Scarabol");
     }
-
-    [ModLoader.ModCallback (ModLoader.EModCallbackType.AfterNetworkSetup, "scarabol.kingdoms.afternetworksetup")]
-    public static void AfterNetworkSetup ()
-    {
-      KingdomsTracker.Load ();
-    }
-
-    [ModLoader.ModCallback (ModLoader.EModCallbackType.OnAutoSaveWorld, "scarabol.kingdoms.onautosaveworld")]
-    [ModLoader.ModCallback (ModLoader.EModCallbackType.OnQuitEarly, "scarabol.kingdoms.onquitearly")]
-    public static void OnAutoSaveWorld ()
-    {
-      KingdomsTracker.Save ();
-    }
   }
 }
