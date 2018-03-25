@@ -17,7 +17,7 @@ namespace ScarabolMods
     [ModLoader.ModCallback (ModLoader.EModCallbackType.AfterStartup, "scarabol.kingdoms.registercallbacks")]
     public static void AfterStartup ()
     {
-      Pipliz.Log.Write ("Loaded Kingdoms Mod 6.0.2 by Scarabol");
+      Pipliz.Log.Write ("Loaded Kingdoms Mod 6.0.3 by Scarabol");
     }
   }
 }
