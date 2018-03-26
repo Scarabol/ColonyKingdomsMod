@@ -1,6 +1,5 @@
 ﻿using Pipliz;
 using Pipliz.JSON;
-using Pipliz.Threading;
 using BlockTypes.Builtin;
 using NPC;
 
@@ -9,6 +8,7 @@ namespace ScarabolMods
   public class NpcKingdomFarm : NpcKingdom
   {
     int Size;
+    bool Build;
 
     public static NpcKingdomFarm Create (Vector3Int farmPosition, int size)
     {
@@ -44,43 +44,41 @@ namespace ScarabolMods
     {
       base.InitNew ();
       Name = "NPC-Farmer";
-      new NpcFarmBuilder (Player, Origin, Size).Build ();
+      Build = true;
     }
 
-    protected override void Update ()
+    protected override void Update (Players.Player player)
     {
-      ThreadManager.InvokeOnMainThread (delegate {
-        CheckFood ();
-        CheckFollower ();
-        CheckSeeds ();
-      });
+      if (Build) {
+        Build = false;
+        new NpcFarmBuilder (player, Origin, Size).Build ();
+      }
+      var stockpile = Stockpile.GetStockPile (player);
+      var colony = Colony.Get (player);
+      CheckItemAmount (stockpile, BuiltinBlocks.Bread, 5000);
+      CheckFollower (player, colony);
+      CheckItemAmount (stockpile, BuiltinBlocks.WheatStage1, 100);
     }
 
-    void CheckFood ()
+    void CheckItemAmount (Stockpile stockpile, ushort itemType, int minAmount)
     {
-      var missing = 5000 - Stockpile.AmountContained (BuiltinBlocks.Bread);
-      Stockpile.Add (BuiltinBlocks.Bread, missing);
+      var missing = minAmount - stockpile.AmountContained (itemType);
+      stockpile.Add (itemType, missing);
     }
 
-    void CheckFollower ()
+    void CheckFollower (Players.Player player, Colony colony)
     {
-      int maxFollower = Math.Min (Size, BedBlockTracker.GetCount (Player));
-      for (int c = Colony.FollowerCount; c < maxFollower; c++) {
-        SpawnNpc ();
+      int maxFollower = Math.Min (Size, BedBlockTracker.GetCount (player));
+      for (int c = colony.FollowerCount; c < maxFollower; c++) {
+        SpawnNpc (colony);
       }
     }
 
-    void SpawnNpc ()
+    void SpawnNpc (Colony colony)
     {
-      NPCBase npc = new NPCBase (Server.NPCs.NPCType.GetByKeyNameOrDefault ("pipliz.laborer"), Origin.Vector, Colony);
+      NPCBase npc = new NPCBase (Server.NPCs.NPCType.GetByKeyNameOrDefault ("pipliz.laborer"), Origin.Vector, colony);
       ModLoader.TriggerCallbacks (ModLoader.EModCallbackType.OnNPCRecruited, npc);
-      Colony.SendUpdate ();
-    }
-
-    void CheckSeeds ()
-    {
-      var missing = 100 - Stockpile.AmountContained (BuiltinBlocks.WheatStage1);
-      Stockpile.Add (BuiltinBlocks.WheatStage1, missing);
+      colony.SendUpdate ();
     }
   }
 }

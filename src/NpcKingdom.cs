@@ -3,6 +3,7 @@ using System.Threading;
 using System.Collections.Generic;
 using Pipliz;
 using Pipliz.JSON;
+using Pipliz.Threading;
 using Steamworks;
 using BlockTypes.Builtin;
 
@@ -17,19 +18,13 @@ namespace ScarabolMods
     protected int PrimaryMinY;
     protected int PrimaryMaxY;
     public uint NpcID;
-    public Players.Player Player;
+    public string Name;
     public Vector3Int Origin;
-    public Stockpile Stockpile { get { return Stockpile.GetStockPile (Player); } }
-    public Colony Colony { get { return Colony.Get (Player); } }
+    public NetworkID NetworkID;
 
     public NpcKingdom (string kingdomType)
     {
       KingdomType = kingdomType;
-    }
-
-    public string Name {
-      get { return Player.Name; }
-      set { Player.Name = value; }
     }
 
     public virtual JSONNode GetJson ()
@@ -37,39 +32,44 @@ namespace ScarabolMods
       var kingdomNode = new JSONNode ();
       kingdomNode.SetAs ("KingdomType", KingdomType);
       kingdomNode.SetAs ("NpcID", NpcID);
-      kingdomNode.SetAs ("Name", Player.Name);
+      kingdomNode.SetAs ("Name", Name);
       kingdomNode.SetAs ("Origin", (JSONNode)Origin);
+      kingdomNode.SetAs ("NetworkID", NetworkID.ToString ());
       return kingdomNode;
     }
 
     public virtual void InitFromJson (JSONNode jsonNode)
     {
       if (!jsonNode.TryGetAs ("NpcID", out NpcID)) {
-        NpcID = KingdomsTracker.GetNextID ();
+        NpcID = KingdomsTracker.GetNextNpcID ();
       }
-      InitPlayer ();
       string name;
       if (jsonNode.TryGetAs ("Name", out name)) {
-        Player.Name = name;
+        Name = name;
       }
       JSONNode jsonOrigin;
       if (jsonNode.TryGetAs ("Origin", out jsonOrigin)) {
         Origin = (Vector3Int)jsonOrigin;
+      }
+      string networkID;
+      if (jsonNode.TryGetAs ("NetworkID", out networkID)) {
+        NetworkID = NetworkID.Parse (networkID);
+      } else {
+        NetworkID = CreateFakeNetworkID (NpcID);
       }
       KingdomsTracker.RegisterKingdom (this);
     }
 
     public virtual void InitNew ()
     {
-      NpcID = KingdomsTracker.GetNextID ();
-      InitPlayer ();
+      NpcID = KingdomsTracker.GetNextNpcID ();
+      NetworkID = CreateFakeNetworkID (NpcID);
       KingdomsTracker.RegisterKingdom (this);
     }
 
-    void InitPlayer ()
+    static NetworkID CreateFakeNetworkID (uint npcID)
     {
-      var fakeSteamID = new CSteamID (new AccountID_t (NpcID), EUniverse.k_EUniversePublic, EAccountType.k_EAccountTypeAnonGameServer);
-      Player = Players.GetPlayer (new NetworkID (fakeSteamID));
+      return new NetworkID (new CSteamID (new AccountID_t (npcID), EUniverse.k_EUniversePublic, EAccountType.k_EAccountTypeAnonGameServer));
     }
 
     public void StartThread ()
@@ -78,17 +78,21 @@ namespace ScarabolMods
         Thread.CurrentThread.IsBackground = true;
         Log.Write ($"Started AI thread");
         while (true) {
-          try {
-            Update ();
-          } catch (Exception exception) {
-            Log.WriteError ($"Exception in kingdom update thread; {exception.Message}");
-          }
+          ThreadManager.InvokeOnMainThread (delegate {
+            try {
+              var player = Players.GetPlayer (NetworkID);
+              player.Name = Name;
+              Update (player);
+            } catch (Exception exception) {
+              Log.WriteError ($"Exception in kingdom update thread; {exception.Message}");
+            }
+          });
           Thread.Sleep (5000);
         }
       }).Start ();
     }
 
-    protected abstract void Update ();
+    protected abstract void Update (Players.Player player);
 
     public int Range {
       get {
