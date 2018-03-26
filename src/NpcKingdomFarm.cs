@@ -27,13 +27,6 @@ namespace ScarabolMods
       PrimaryMaxY = 6;
     }
 
-    public override void InitNew ()
-    {
-      base.InitNew ();
-      Name = "NPC-Farmer";
-      new NpcFarmBuilder (Player, Origin, Size).Build ();
-    }
-
     public override JSONNode GetJson ()
     {
       var kingdomNode = base.GetJson ();
@@ -45,6 +38,13 @@ namespace ScarabolMods
     {
       base.InitFromJson (jsonNode);
       jsonNode.TryGetAs ("Size", out Size);
+    }
+
+    public override void InitNew ()
+    {
+      base.InitNew ();
+      Name = "NPC-Farmer";
+      new NpcFarmBuilder (Player, Origin, Size).Build ();
     }
 
     protected override void Update ()

@@ -12,7 +12,7 @@ namespace ScarabolMods
   {
     static readonly List<NpcKingdom> Kingdoms = new List<NpcKingdom> ();
     static readonly ReaderWriterLockSlim KingdomsLock = new ReaderWriterLockSlim ();
-    static uint NextID = 742000000;
+    static uint NextNpcID = 742000000;
 
     static string JsonFilePath {
       get {
@@ -33,10 +33,10 @@ namespace ScarabolMods
       npcKingdom.StartThread ();
     }
 
-    public static uint GetNextID ()
+    public static uint GetNextNpcID ()
     {
-      NextID++;
-      return NextID;
+      NextNpcID++;
+      return NextNpcID;
     }
 
     public static int Count {
@@ -88,7 +88,7 @@ namespace ScarabolMods
                 continue;
               }
               kingdom.InitFromJson (jsonNode);
-              NextID = System.Math.Max (NextID, kingdom.NpcID);
+              NextNpcID = System.Math.Max (NextNpcID, kingdom.NpcID);
             }
           }
           Log.Write ($"Loaded {Count} kingdoms from json");

@@ -19,6 +19,8 @@ namespace ScarabolMods
     public uint NpcID;
     public Players.Player Player;
     public Vector3Int Origin;
+    public Stockpile Stockpile { get { return Stockpile.GetStockPile (Player); } }
+    public Colony Colony { get { return Colony.Get (Player); } }
 
     public NpcKingdom (string kingdomType)
     {
@@ -28,31 +30,6 @@ namespace ScarabolMods
     public string Name {
       get { return Player.Name; }
       set { Player.Name = value; }
-    }
-
-    public Stockpile Stockpile {
-      get {
-        return Stockpile.GetStockPile (Player);
-      }
-    }
-
-    public Colony Colony {
-      get {
-        return Colony.Get (Player);
-      }
-    }
-
-    public virtual void InitNew ()
-    {
-      NpcID = KingdomsTracker.GetNextID ();
-      InitPlayer ();
-      KingdomsTracker.RegisterKingdom (this);
-    }
-
-    void InitPlayer ()
-    {
-      var fakeSteamID = new CSteamID (new AccountID_t (NpcID), EUniverse.k_EUniversePublic, EAccountType.k_EAccountTypeAnonGameServer);
-      Player = Players.GetPlayer (new NetworkID (fakeSteamID));
     }
 
     public virtual JSONNode GetJson ()
@@ -80,6 +57,19 @@ namespace ScarabolMods
         Origin = (Vector3Int)jsonOrigin;
       }
       KingdomsTracker.RegisterKingdom (this);
+    }
+
+    public virtual void InitNew ()
+    {
+      NpcID = KingdomsTracker.GetNextID ();
+      InitPlayer ();
+      KingdomsTracker.RegisterKingdom (this);
+    }
+
+    void InitPlayer ()
+    {
+      var fakeSteamID = new CSteamID (new AccountID_t (NpcID), EUniverse.k_EUniversePublic, EAccountType.k_EAccountTypeAnonGameServer);
+      Player = Players.GetPlayer (new NetworkID (fakeSteamID));
     }
 
     public void StartThread ()
