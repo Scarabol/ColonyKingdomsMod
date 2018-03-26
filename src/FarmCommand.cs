@@ -46,7 +46,7 @@ namespace ScarabolMods
           size = 1 + Pipliz.Random.Next (NpcFarmBuilder.MAX_SIZE);
         }
         var farmPosition = ToFarmPosition (causedBy.Position);
-        NpcKingdomFarm.CreateFarm (farmPosition, size);
+        NpcKingdomFarm.Create (farmPosition, size).InitNew ();
         Chat.Send (causedBy, $"You placed a farm at {farmPosition} with size {size}");
       } catch (Exception exception) {
         Log.WriteError (string.Format ("Exception while parsing command; {0} - {1}", exception.Message, exception.StackTrace));

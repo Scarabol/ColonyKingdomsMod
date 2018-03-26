@@ -56,8 +56,8 @@ namespace ScarabolMods
     public static void Load ()
     {
       try {
-        JSONNode json;
-        if (JSON.Deserialize (JsonFilePath, out json, false)) {
+        JSONNode jsonFileNode;
+        if (JSON.Deserialize (JsonFilePath, out jsonFileNode, false)) {
           try {
             KingdomsLock.EnterWriteLock ();
             Kingdoms.Clear ();
@@ -66,8 +66,14 @@ namespace ScarabolMods
               KingdomsLock.ExitWriteLock ();
             }
           }
+          JSONNode jsonSpawner;
+          if (jsonFileNode.TryGetAs ("spawner", out jsonSpawner) && jsonSpawner.NodeType == NodeType.Object) {
+            KingdomSpawner.SetFromJson (jsonSpawner);
+          } else {
+            Log.Write ($"kingdom spawner not configured in {JsonFilePath}, loading defaults");
+          }
           JSONNode jsonKingdoms;
-          if (!json.TryGetAs ("kingdoms", out jsonKingdoms) || jsonKingdoms.NodeType != NodeType.Array) {
+          if (!jsonFileNode.TryGetAs ("kingdoms", out jsonKingdoms) || jsonKingdoms.NodeType != NodeType.Array) {
             Log.WriteError ($"No 'kingdoms' array found in '{JsonFilePath}'");
             return;
           }
@@ -97,6 +103,9 @@ namespace ScarabolMods
     public static void Save ()
     {
       try {
+        JSONNode jsonFileNode = new JSONNode ();
+        JSONNode jsonSpawner = KingdomSpawner.GetJson ();
+        jsonFileNode.SetAs ("spawner", jsonSpawner);
         JSONNode jsonKingdoms = new JSONNode (NodeType.Array);
         try {
           KingdomsLock.EnterReadLock ();
@@ -108,7 +117,6 @@ namespace ScarabolMods
             KingdomsLock.ExitReadLock ();
           }
         }
-        JSONNode jsonFileNode = new JSONNode ();
         jsonFileNode.SetAs ("kingdoms", jsonKingdoms);
         JSON.Serialize (JsonFilePath, jsonFileNode, 2);
         Log.Write ($"Saved {Count} kingdoms to json");
@@ -117,5 +125,32 @@ namespace ScarabolMods
       }
     }
 
+    [ModLoader.ModCallback (ModLoader.EModCallbackType.OnShouldKeepChunkLoaded, "scarabol.kingdoms.npckingdomtracker.onshouldkeepchunkloaded")]
+    public static void OnShouldKeepChunkLoaded (ChunkUpdating.KeepChunkLoadedData data)
+    {
+      try {
+        KingdomsLock.EnterReadLock ();
+        foreach (NpcKingdom kingdom in Kingdoms) {
+          if (IsInRange (data.CheckedChunk.Position, KingdomsModEntries.CHUNK_SIZE, kingdom.Origin, kingdom.Range)) {
+            data.Result = true;
+            return;
+          }
+        }
+      } finally {
+        if (KingdomsLock.IsReadLockHeld) {
+          KingdomsLock.ExitReadLock ();
+        }
+      }
+    }
+
+    static bool IsInRange (Vector3Int position1, int range1, Vector3Int position2, int range2)
+    {
+      var dx = position1.x - position2.x;
+      int dy = position1.y - position2.y;
+      int dz = position1.z - position2.z;
+      var distanceSquare = Pipliz.Math.Pow2 (dx) + Pipliz.Math.Pow2 (dy) + Pipliz.Math.Pow2 (dz);
+      var maxDist = Pipliz.Math.Pow2 (range1 + range2);
+      return distanceSquare < maxDist;
+    }
   }
 }

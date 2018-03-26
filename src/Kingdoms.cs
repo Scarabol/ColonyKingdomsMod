@@ -8,6 +8,9 @@ namespace ScarabolMods
     public static readonly string MOD_PREFIX = "mods.scarabol.kingdoms.";
     public static string ModDirectory;
 
+    public static readonly int CHUNK_SIZE = 16;
+    public static readonly int SAFETY_RANGE_CHUNKS = 2;
+
     [ModLoader.ModCallback (ModLoader.EModCallbackType.OnAssemblyLoaded, "scarabol.kingdoms.assemblyload")]
     public static void OnAssemblyLoaded (string path)
     {

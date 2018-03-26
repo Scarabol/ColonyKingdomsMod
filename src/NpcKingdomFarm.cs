@@ -10,18 +10,28 @@ namespace ScarabolMods
   {
     int Size;
 
-    public static void CreateFarm (Vector3Int farmPosition, int size)
+    public static NpcKingdomFarm Create (Vector3Int farmPosition, int size)
     {
-      var npcKingdom = new NpcKingdomFarm ();
-      npcKingdom.InitPlayer (KingdomsTracker.GetNextID ());
-      npcKingdom.SetName ("NPC-Farmer");
-      npcKingdom.Size = size;
-      npcKingdom.SetOrigin (farmPosition);
-      new NpcFarmBuilder (npcKingdom.Player, farmPosition, npcKingdom.Size).Build ();
+      var result = new NpcKingdomFarm ();
+      result.Origin = farmPosition;
+      result.Size = size;
+      return result;
     }
 
     public NpcKingdomFarm () : base ("farm")
     {
+      RangeInChunks = 2;
+      HeightInChunks = 1;
+      PrimaryRange = 8;
+      PrimaryMinY = 0;
+      PrimaryMaxY = 6;
+    }
+
+    public override void InitNew ()
+    {
+      base.InitNew ();
+      Name = "NPC-Farmer";
+      new NpcFarmBuilder (Player, Origin, Size).Build ();
     }
 
     public override JSONNode GetJson ()

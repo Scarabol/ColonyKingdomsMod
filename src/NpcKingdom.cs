@@ -1,14 +1,21 @@
 ﻿using System;
 using System.Threading;
+using System.Collections.Generic;
 using Pipliz;
 using Pipliz.JSON;
 using Steamworks;
+using BlockTypes.Builtin;
 
 namespace ScarabolMods
 {
   public abstract class NpcKingdom
   {
     public readonly string KingdomType;
+    protected int RangeInChunks;
+    protected int HeightInChunks;
+    protected int PrimaryRange;
+    protected int PrimaryMinY;
+    protected int PrimaryMaxY;
     public uint NpcID;
     public Players.Player Player;
     public Vector3Int Origin;
@@ -16,7 +23,11 @@ namespace ScarabolMods
     public NpcKingdom (string kingdomType)
     {
       KingdomType = kingdomType;
-      KingdomsTracker.RegisterKingdom (this);
+    }
+
+    public string Name {
+      get { return Player.Name; }
+      set { Player.Name = value; }
     }
 
     public Stockpile Stockpile {
@@ -31,21 +42,17 @@ namespace ScarabolMods
       }
     }
 
-    public virtual void InitPlayer (uint NpcID)
+    public virtual void InitNew ()
     {
-      this.NpcID = NpcID;
+      NpcID = KingdomsTracker.GetNextID ();
+      InitPlayer ();
+      KingdomsTracker.RegisterKingdom (this);
+    }
+
+    void InitPlayer ()
+    {
       var fakeSteamID = new CSteamID (new AccountID_t (NpcID), EUniverse.k_EUniversePublic, EAccountType.k_EAccountTypeAnonGameServer);
       Player = Players.GetPlayer (new NetworkID (fakeSteamID));
-    }
-
-    public void SetName (string name)
-    {
-      Player.Name = name;
-    }
-
-    public void SetOrigin (Vector3Int origin)
-    {
-      Origin = origin;
     }
 
     public virtual JSONNode GetJson ()
@@ -63,7 +70,7 @@ namespace ScarabolMods
       if (!jsonNode.TryGetAs ("NpcID", out NpcID)) {
         NpcID = KingdomsTracker.GetNextID ();
       }
-      InitPlayer (NpcID);
+      InitPlayer ();
       string name;
       if (jsonNode.TryGetAs ("Name", out name)) {
         Player.Name = name;
@@ -72,6 +79,7 @@ namespace ScarabolMods
       if (jsonNode.TryGetAs ("Origin", out jsonOrigin)) {
         Origin = (Vector3Int)jsonOrigin;
       }
+      KingdomsTracker.RegisterKingdom (this);
     }
 
     public void StartThread ()
@@ -91,5 +99,50 @@ namespace ScarabolMods
     }
 
     protected abstract void Update ();
+
+    public int Range {
+      get {
+        return (System.Math.Max (RangeInChunks, HeightInChunks) + KingdomsModEntries.SAFETY_RANGE_CHUNKS) * KingdomsModEntries.CHUNK_SIZE;
+      }
+    }
+
+    public HashSet<Vector3Int> GetPrimaryChunkPositions ()
+    {
+      return GetChunks (Origin, PrimaryRange, PrimaryMinY, PrimaryMaxY);
+    }
+
+    public bool IsAreaClear ()
+    {
+      for (int x = -PrimaryRange; x < PrimaryRange; x++) {
+        for (int y = PrimaryMinY; y < PrimaryMaxY; y++) {
+          for (int z = -PrimaryRange; z < PrimaryRange; z++) {
+            Vector3Int checkPosition = Origin.Add (x, y, z);
+            if (!World.TryGetTypeAt (checkPosition, out ushort spotType) || spotType != BuiltinBlocks.Air) {
+              return false;
+            }
+          }
+        }
+      }
+      return true;
+    }
+
+    public HashSet<Vector3Int> GetTotalChunkPositions ()
+    {
+      return GetChunks (Origin, Range, -Range, Range);
+    }
+
+    static HashSet<Vector3Int> GetChunks (Vector3Int center, int range, int yMin, int yMax)
+    {
+      HashSet<Vector3Int> result = new HashSet<Vector3Int> ();
+      for (int x = -range; x < range; x++) {
+        for (int y = yMin; y < yMax; y++) {
+          for (int z = -range; z < range; z++) {
+            Vector3Int chunkPosition = center.Add (x, y, z).ToChunk ();
+            result.Add (chunkPosition);
+          }
+        }
+      }
+      return result;
+    }
   }
 }
