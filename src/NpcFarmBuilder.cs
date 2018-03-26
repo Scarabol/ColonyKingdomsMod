@@ -10,7 +10,7 @@ namespace ScarabolMods
 
     readonly Players.Player Owner;
     readonly Vector3Int FarmOrigin;
-    readonly int FarmSize;
+    int FarmSize;
 
     public NpcFarmBuilder (Players.Player owner, Vector3Int farmOrigin, int size)
     {
@@ -21,9 +21,9 @@ namespace ScarabolMods
 
     public void Build ()
     {
+      CreateFields ();
       CreateFarmHouse ();
       CreatePaths ();
-      CreateFields ();
     }
 
     void CreateFarmHouse ()
@@ -101,7 +101,8 @@ namespace ScarabolMods
           }
         }
       }
-      for (int c = 0; c < FarmSize && possibleFieldPositions.Count > 0;) {
+      int c;
+      for (c = 0; c < FarmSize && possibleFieldPositions.Count > 0;) {
         var spot = Random.Next (possibleFieldPositions.Count);
         var fieldPosition = possibleFieldPositions [spot];
         possibleFieldPositions.RemoveAt (spot);
@@ -109,6 +110,7 @@ namespace ScarabolMods
           c++;
         }
       }
+      FarmSize = c;
     }
 
     bool CreateFieldAndJob (Vector3Int center)
