@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading;
 using System.Collections.Generic;
 using Pipliz;
 using Pipliz.JSON;
@@ -9,12 +10,26 @@ namespace ScarabolMods
   [ModLoader.ModManager]
   public static class KingdomsTracker
   {
+    static readonly List<NpcKingdom> Kingdoms = new List<NpcKingdom> ();
+    static readonly ReaderWriterLockSlim KingdomsLock = new ReaderWriterLockSlim ();
     static uint NextID = 742000000;
-    static List<NpcKingdom> kingdoms = new List<NpcKingdom> ();
+
+    static string JsonFilePath {
+      get {
+        return Path.Combine (Path.Combine ("gamedata", "savegames"), Path.Combine (ServerManager.WorldName, "kingdoms.json"));
+      }
+    }
 
     public static void RegisterKingdom (NpcKingdom npcKingdom)
     {
-      kingdoms.Add (npcKingdom);
+      try {
+        KingdomsLock.EnterWriteLock ();
+        Kingdoms.Add (npcKingdom);
+      } finally {
+        if (KingdomsLock.IsWriteLockHeld) {
+          KingdomsLock.ExitWriteLock ();
+        }
+      }
       npcKingdom.StartThread ();
     }
 
@@ -24,9 +39,16 @@ namespace ScarabolMods
       return NextID;
     }
 
-    static string JsonFilePath {
+    public static int Count {
       get {
-        return Path.Combine (Path.Combine ("gamedata", "savegames"), Path.Combine (ServerManager.WorldName, "kingdoms.json"));
+        try {
+          KingdomsLock.EnterReadLock ();
+          return Kingdoms.Count;
+        } finally {
+          if (KingdomsLock.IsReadLockHeld) {
+            KingdomsLock.ExitReadLock ();
+          }
+        }
       }
     }
 
@@ -36,7 +58,14 @@ namespace ScarabolMods
       try {
         JSONNode json;
         if (JSON.Deserialize (JsonFilePath, out json, false)) {
-          kingdoms.Clear ();
+          try {
+            KingdomsLock.EnterWriteLock ();
+            Kingdoms.Clear ();
+          } finally {
+            if (KingdomsLock.IsWriteLockHeld) {
+              KingdomsLock.ExitWriteLock ();
+            }
+          }
           JSONNode jsonKingdoms;
           if (!json.TryGetAs ("kingdoms", out jsonKingdoms) || jsonKingdoms.NodeType != NodeType.Array) {
             Log.WriteError ($"No 'kingdoms' array found in '{JsonFilePath}'");
@@ -69,8 +98,15 @@ namespace ScarabolMods
     {
       try {
         JSONNode jsonKingdoms = new JSONNode (NodeType.Array);
-        foreach (NpcKingdom kingdom in kingdoms) {
-          jsonKingdoms.AddToArray (kingdom.GetJson ());
+        try {
+          KingdomsLock.EnterReadLock ();
+          foreach (NpcKingdom kingdom in Kingdoms) {
+            jsonKingdoms.AddToArray (kingdom.GetJson ());
+          }
+        } finally {
+          if (KingdomsLock.IsReadLockHeld) {
+            KingdomsLock.ExitReadLock ();
+          }
         }
         JSONNode jsonFileNode = new JSONNode ();
         jsonFileNode.SetAs ("kingdoms", jsonKingdoms);
