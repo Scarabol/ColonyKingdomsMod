@@ -5,7 +5,7 @@ namespace ScarabolMods
   [ModLoader.ModManager]
   public static class KingdomsModEntries
   {
-    public static string MOD_PREFIX = "mods.scarabol.kingdoms.";
+    public static readonly string MOD_PREFIX = "mods.scarabol.kingdoms.";
     public static string ModDirectory;
 
     [ModLoader.ModCallback (ModLoader.EModCallbackType.OnAssemblyLoaded, "scarabol.kingdoms.assemblyload")]

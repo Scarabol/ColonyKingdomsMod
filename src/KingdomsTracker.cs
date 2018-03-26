@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Collections.Generic;
+using Pipliz;
 using Pipliz.JSON;
 
 namespace ScarabolMods
@@ -38,7 +39,7 @@ namespace ScarabolMods
           kingdoms.Clear ();
           JSONNode jsonKingdoms;
           if (!json.TryGetAs ("kingdoms", out jsonKingdoms) || jsonKingdoms.NodeType != NodeType.Array) {
-            Pipliz.Log.WriteError ($"No 'kingdoms' array found in '{JsonFilePath}'");
+            Log.WriteError ($"No 'kingdoms' array found in '{JsonFilePath}'");
             return;
           }
           foreach (JSONNode jsonNode in jsonKingdoms.LoopArray ()) {
@@ -48,17 +49,17 @@ namespace ScarabolMods
               if ("farm".Equals (type)) {
                 kingdom = new NpcKingdomFarm ();
               } else {
-                Pipliz.Log.WriteError ($"Unknown npc kingdom type {type}");
+                Log.WriteError ($"Unknown npc kingdom type {type}");
                 continue;
               }
               kingdom.InitFromJson (jsonNode);
-              NextID = Math.Max (NextID, kingdom.NpcID);
+              NextID = System.Math.Max (NextID, kingdom.NpcID);
             }
           }
-          Pipliz.Log.Write ($"Loaded {kingdoms.Count} kingdoms from json");
+          Log.Write ($"Loaded {Count} kingdoms from json");
         }
       } catch (Exception exception) {
-        Pipliz.Log.WriteError (string.Format ("Exception while loading kingdoms; {0}", exception.Message));
+        Log.WriteError (string.Format ("Exception while loading kingdoms; {0}", exception.Message));
       }
     }
 
@@ -74,9 +75,9 @@ namespace ScarabolMods
         JSONNode jsonFileNode = new JSONNode ();
         jsonFileNode.SetAs ("kingdoms", jsonKingdoms);
         JSON.Serialize (JsonFilePath, jsonFileNode, 2);
-        Pipliz.Log.Write ($"Saved {kingdoms.Count} kingdoms to json");
+        Log.Write ($"Saved {Count} kingdoms to json");
       } catch (Exception exception) {
-        Pipliz.Log.WriteError (string.Format ("Exception while saving kingdoms; {0}", exception.Message));
+        Log.WriteError (string.Format ("Exception while saving kingdoms; {0}", exception.Message));
       }
     }
 

@@ -121,6 +121,13 @@ namespace ScarabolMods
       BlockPlacementHelper.PlaceBlock (center.Add (-5, 1, crateZ), BuiltinBlocks.TorchYP, Owner);
       var min = center.Add (-4, 0, -4);
       var max = center.Add (5, 0, 5);
+      for (int x = min.x; x < max.x; x++) {
+        for (int z = min.z; z < max.z; z++) {
+          if (!World.TryIsSolid (new Vector3Int (x, center.y - 1, z), out bool solid) || !solid) {
+            return false;
+          }
+        }
+      }
       AreaJobTracker.CreateNewAreaJob ("pipliz.wheatfarm", Owner, min, max);
       return true;
     }

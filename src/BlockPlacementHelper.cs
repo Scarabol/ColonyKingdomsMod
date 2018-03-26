@@ -8,18 +8,20 @@ namespace ScarabolMods
     {
       int radius = diameter / 2;
       for (int c = 0; c < diameter; c++) {
-        ServerManager.TryChangeBlock (center.Add (-radius, 0, -radius + c), type, player);
-        ServerManager.TryChangeBlock (center.Add (radius, 0, -radius + c), type, player);
+        PlaceBlock (center.Add (-radius, 0, -radius + c), type, player);
+        PlaceBlock (center.Add (radius, 0, -radius + c), type, player);
       }
       for (int c = 0; c < diameter - 2; c++) {
-        ServerManager.TryChangeBlock (center.Add (-radius + 1 + c, 0, -radius), type, player);
-        ServerManager.TryChangeBlock (center.Add (-radius + 1 + c, 0, radius), type, player);
+        PlaceBlock (center.Add (-radius + 1 + c, 0, -radius), type, player);
+        PlaceBlock (center.Add (-radius + 1 + c, 0, radius), type, player);
       }
     }
 
     public static void PlaceBlock (Vector3Int position, ushort type, Players.Player player)
     {
-      ServerManager.TryChangeBlock (position, type, player);
+      if (!ServerManager.TryChangeBlock (position, type, player)) {
+        Pipliz.Log.WriteError ($"Could not place block at {position}");
+      }
     }
 
     public static void FillPlane (Vector3Int start, int width, int depth, ushort type, Players.Player player)
