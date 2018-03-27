@@ -52,12 +52,17 @@ namespace ScarabolMods
       if (Build) {
         Build = false;
         new NpcFarmBuilder (player, Origin, Size).Build ();
+      } else if (BedBlockTracker.GetCount (player) < 1) {
+        KingdomsTracker.SendNotification ($"Farm at {Origin} is dead! Lost all beds");
+        Dead = true;
+        Colony.Get (player).Followers.ForEach (follower => follower.OnDeath ());
+      } else {
+        var stockpile = Stockpile.GetStockPile (player);
+        var colony = Colony.Get (player);
+        CheckItemAmount (stockpile, BuiltinBlocks.Bread, 5000);
+        CheckFollower (player, colony);
+        CheckItemAmount (stockpile, BuiltinBlocks.WheatStage1, 100);
       }
-      var stockpile = Stockpile.GetStockPile (player);
-      var colony = Colony.Get (player);
-      CheckItemAmount (stockpile, BuiltinBlocks.Bread, 5000);
-      CheckFollower (player, colony);
-      CheckItemAmount (stockpile, BuiltinBlocks.WheatStage1, 100);
     }
 
     void CheckItemAmount (Stockpile stockpile, ushort itemType, int minAmount)

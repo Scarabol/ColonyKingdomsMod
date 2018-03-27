@@ -21,6 +21,7 @@ namespace ScarabolMods
     public string Name;
     public Vector3Int Origin;
     public NetworkID NetworkID;
+    protected bool Dead;
 
     public NpcKingdom (string kingdomType)
     {
@@ -77,7 +78,7 @@ namespace ScarabolMods
       new Thread (() => {
         Thread.CurrentThread.IsBackground = true;
         Log.Write ($"Started AI thread");
-        while (true) {
+        while (!Dead) {
           ThreadManager.InvokeOnMainThread (delegate {
             try {
               var player = Players.GetPlayer (NetworkID);
@@ -89,6 +90,7 @@ namespace ScarabolMods
           });
           Thread.Sleep (5000);
         }
+        KingdomsTracker.UnregisterKingdom (this);
       }).Start ();
     }
 
