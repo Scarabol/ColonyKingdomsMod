@@ -83,8 +83,7 @@ namespace ScarabolMods
     public static void Load ()
     {
       try {
-        JSONNode jsonFileNode;
-        if (JSON.Deserialize (JsonFilePath, out jsonFileNode, false)) {
+        if (JSON.Deserialize (JsonFilePath, out JSONNode jsonFileNode, false)) {
           try {
             KingdomsLock.EnterWriteLock ();
             Kingdoms.Clear ();
@@ -93,22 +92,22 @@ namespace ScarabolMods
               KingdomsLock.ExitWriteLock ();
             }
           }
-          jsonFileNode.TryGetAsOrDefault<uint> ("NextNpcID", out NextNpcID, DefaultNextNpcID);
+          jsonFileNode.TryGetAsOrDefault ("NextNpcID", out NextNpcID, DefaultNextNpcID);
           jsonFileNode.TryGetAsOrDefault ("NotifyPermission", out NotifyPermission, DefaultNotifyPermission);
-          JSONNode jsonSpawner;
-          if (jsonFileNode.TryGetAs ("spawner", out jsonSpawner) && jsonSpawner.NodeType == NodeType.Object) {
+          if (jsonFileNode.TryGetAs ("spawner", out JSONNode jsonSpawner) && jsonSpawner.NodeType == NodeType.Object) {
             KingdomSpawner.SetFromJson (jsonSpawner);
           } else {
             Log.Write ($"kingdom spawner not configured in {JsonFilePath}, loading defaults");
           }
-          JSONNode jsonKingdoms;
-          if (!jsonFileNode.TryGetAs ("kingdoms", out jsonKingdoms) || jsonKingdoms.NodeType != NodeType.Array) {
+          if (jsonFileNode.TryGetAs ("loot", out JSONNode jsonLoot)) {
+            Lootbox.SetFromJson (jsonLoot);
+          }
+          if (!jsonFileNode.TryGetAs ("kingdoms", out JSONNode jsonKingdoms) || jsonKingdoms.NodeType != NodeType.Array) {
             Log.WriteError ($"No 'kingdoms' array found in '{JsonFilePath}'");
             return;
           }
           foreach (JSONNode jsonNode in jsonKingdoms.LoopArray ()) {
-            string type;
-            if (jsonNode.TryGetAs ("KingdomType", out type)) {
+            if (jsonNode.TryGetAs ("KingdomType", out string type)) {
               NpcKingdom kingdom;
               if ("farm".Equals (type)) {
                 kingdom = new NpcKingdomFarm ();
@@ -132,11 +131,11 @@ namespace ScarabolMods
     public static void Save ()
     {
       try {
-        JSONNode jsonFileNode = new JSONNode ();
+        var jsonFileNode = new JSONNode ();
         jsonFileNode.SetAs ("NextNpcID", NextNpcID);
         jsonFileNode.SetAs ("NotifyPermission", NotifyPermission);
-        JSONNode jsonSpawner = KingdomSpawner.GetJson ();
-        jsonFileNode.SetAs ("spawner", jsonSpawner);
+        jsonFileNode.SetAs ("spawner", KingdomSpawner.GetJson ());
+        jsonFileNode.SetAs ("loot", Lootbox.GetJson ());
         JSONNode jsonKingdoms = new JSONNode (NodeType.Array);
         try {
           KingdomsLock.EnterReadLock ();

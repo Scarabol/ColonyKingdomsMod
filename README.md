@@ -45,6 +45,7 @@ The timings and limits for this process can be configured via the json file.
 * download a (compatible) [release](https://github.com/Scarabol/ColonyKingdomsMod/releases) or build from source code (see below)
 * place the unzipped *Scarabol* folder inside your *ColonySurvival/gamedata/mods/* directory, like *ColonySurvival/gamedata/mods/Scarabol/*
 
+
 ## Build
 
 * install Linux
