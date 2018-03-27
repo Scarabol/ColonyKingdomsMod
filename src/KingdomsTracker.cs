@@ -4,6 +4,7 @@ using System.Threading;
 using System.Collections.Generic;
 using Pipliz;
 using Pipliz.JSON;
+using Pipliz.Chatting;
 
 namespace ScarabolMods
 {
@@ -12,7 +13,10 @@ namespace ScarabolMods
   {
     static readonly List<NpcKingdom> Kingdoms = new List<NpcKingdom> ();
     static readonly ReaderWriterLockSlim KingdomsLock = new ReaderWriterLockSlim ();
-    static uint NextNpcID = 742000000;
+    static readonly uint DefaultNextNpcID = 742000000;
+    static readonly string DefaultNotifyPermission = "";
+    static uint NextNpcID = DefaultNextNpcID;
+    static string NotifyPermission = DefaultNotifyPermission;
 
     static string JsonFilePath {
       get {
@@ -31,6 +35,29 @@ namespace ScarabolMods
         }
       }
       npcKingdom.StartThread ();
+    }
+
+    public static void UnregisterKingdom (NpcKingdom npcKingdom)
+    {
+      try {
+        KingdomsLock.EnterWriteLock ();
+        Kingdoms.Remove (npcKingdom);
+      } finally {
+        if (KingdomsLock.IsWriteLockHeld) {
+          KingdomsLock.ExitWriteLock ();
+        }
+      }
+    }
+
+    public static void SendNotification (string notification)
+    {
+      Log.Write (notification);
+      for (int c = 0; c < Players.CountConnected; c++) {
+        var player = Players.GetConnectedByIndex (c);
+        if (Permissions.PermissionsManager.HasPermission (player, NotifyPermission)) {
+          Chat.Send (player, notification);
+        }
+      }
     }
 
     public static uint GetNextNpcID ()
@@ -66,6 +93,8 @@ namespace ScarabolMods
               KingdomsLock.ExitWriteLock ();
             }
           }
+          jsonFileNode.TryGetAsOrDefault<uint> ("NextNpcID", out NextNpcID, DefaultNextNpcID);
+          jsonFileNode.TryGetAsOrDefault ("NotifyPermission", out NotifyPermission, DefaultNotifyPermission);
           JSONNode jsonSpawner;
           if (jsonFileNode.TryGetAs ("spawner", out jsonSpawner) && jsonSpawner.NodeType == NodeType.Object) {
             KingdomSpawner.SetFromJson (jsonSpawner);
@@ -104,6 +133,8 @@ namespace ScarabolMods
     {
       try {
         JSONNode jsonFileNode = new JSONNode ();
+        jsonFileNode.SetAs ("NextNpcID", NextNpcID);
+        jsonFileNode.SetAs ("NotifyPermission", NotifyPermission);
         JSONNode jsonSpawner = KingdomSpawner.GetJson ();
         jsonFileNode.SetAs ("spawner", jsonSpawner);
         JSONNode jsonKingdoms = new JSONNode (NodeType.Array);

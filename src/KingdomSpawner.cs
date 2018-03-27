@@ -3,7 +3,6 @@ using System.Threading;
 using System.Collections.Generic;
 using Pipliz;
 using Pipliz.JSON;
-using Pipliz.Chatting;
 using Server.TerrainGeneration;
 
 namespace ScarabolMods
@@ -16,14 +15,12 @@ namespace ScarabolMods
     static readonly int DefaultDelayBetweenPlacingAttempts = 10000;
     static readonly int DefaultNumOfSpotsToCheckPerAttempt = 50;
     static readonly int DefaultDelayBetweenSpotChecks = 1000;
-    static readonly string DefaultNotifyPlacementPermission = "";
 
     static int MaxNumberOfKingdoms = DefaultMaxNumberOfKingdoms;
     static int MaxRangeFromSpawn = DefaultMaxRangeFromSpawn;
     static int DelayBetweenPlacingAttempts = DefaultDelayBetweenPlacingAttempts;
     static int NumOfSpotsToCheckPerAttempt = DefaultNumOfSpotsToCheckPerAttempt;
     static int DelayBetweenSpotChecks = DefaultDelayBetweenSpotChecks;
-    static string NotifyPlacementPermission = DefaultNotifyPlacementPermission;
 
     static HashSet<Vector3Int> currentlyUsedChunks = new HashSet<Vector3Int> ();
     static readonly ReaderWriterLockSlim currentlyUsedChunksLock = new ReaderWriterLockSlim ();
@@ -36,7 +33,6 @@ namespace ScarabolMods
       result.SetAs ("DelayBetweenPlacingAttempts", DelayBetweenPlacingAttempts);
       result.SetAs ("NumOfSpotsToCheckPerAttempt", NumOfSpotsToCheckPerAttempt);
       result.SetAs ("DelayBetweenSpotChecks", DelayBetweenSpotChecks);
-      result.SetAs ("NotifyPlacementPermission", NotifyPlacementPermission);
       return result;
     }
 
@@ -47,7 +43,6 @@ namespace ScarabolMods
       jsonNode.TryGetAsOrDefault ("DelayBetweenPlacingAttempts", out DelayBetweenPlacingAttempts, DefaultDelayBetweenPlacingAttempts);
       jsonNode.TryGetAsOrDefault ("NumOfSpotsToCheckPerAttempt", out NumOfSpotsToCheckPerAttempt, DefaultNumOfSpotsToCheckPerAttempt);
       jsonNode.TryGetAsOrDefault ("DelayBetweenSpotChecks", out DelayBetweenSpotChecks, DefaultDelayBetweenSpotChecks);
-      jsonNode.TryGetAsOrDefault ("NotifyPlacementPermission", out NotifyPlacementPermission, DefaultNotifyPlacementPermission);
     }
 
     [ModLoader.ModCallback (ModLoader.EModCallbackType.AfterNetworkSetup, "scarabol.kingdoms.kingdomspawner.afternetworksetup")]
@@ -68,9 +63,7 @@ namespace ScarabolMods
                 if (npcFarm.IsAreaClear ()) {
                   LoadChunksBlocking (npcFarm.GetTotalChunkPositions ());
                   npcFarm.InitNew ();
-                  string notification = $"Placed a farm of size {farmSize} at {farmPosition}";
-                  Log.Write (notification);
-                  notifyPlacement ("farm", farmPosition);
+                  KingdomsTracker.SendNotification ($"Placed a {npcFarm.KingdomType} of size {farmSize} at {farmPosition}");
                   if (KingdomsTracker.Count >= MaxNumberOfKingdoms) {
                     Log.Write ($"Reached maximum number ({MaxNumberOfKingdoms}) of kingdoms");
                   }
@@ -124,16 +117,6 @@ namespace ScarabolMods
           return chunk != null && chunk.DataState == Chunk.ChunkDataState.DataFull;
         });
         Thread.Sleep (10);
-      }
-    }
-
-    static void notifyPlacement (string kingdomType, Vector3Int origin)
-    {
-      for (int c = 0; c < Players.CountConnected; c++) {
-        var player = Players.GetConnectedByIndex (c);
-        if (Permissions.PermissionsManager.HasPermission (player, NotifyPlacementPermission)) {
-          Chat.Send (player, $"New {kingdomType} spawned at {origin}");
-        }
       }
     }
 
