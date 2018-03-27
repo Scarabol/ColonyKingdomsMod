@@ -1,7 +1,7 @@
 # important variables
 modname = Kingdoms
 versionmajor = 6.0
-versionminor = 5
+versionminor = 6
 compatible_cs = "0.6.0"
 zip_files_extra = 
 
