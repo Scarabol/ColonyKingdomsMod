@@ -1,4 +1,5 @@
-﻿using Pipliz;
+﻿using System.Collections.Generic;
+using Pipliz;
 using Pipliz.JSON;
 using BlockTypes.Builtin;
 using NPC;
@@ -55,7 +56,8 @@ namespace ScarabolMods
       } else if (BedBlockTracker.GetCount (player) < 1) {
         KingdomsTracker.SendNotification ($"Farm at {Origin} is dead! Lost all beds");
         Dead = true;
-        Colony.Get (player).Followers.ForEach (follower => follower.OnDeath ());
+        var followers = new List<NPCBase> (Colony.Get (player).Followers);
+        followers.ForEach (follower => follower.OnDeath ());
       } else {
         var stockpile = Stockpile.GetStockPile (player);
         var colony = Colony.Get (player);
