@@ -67,6 +67,7 @@ namespace ScarabolMods
         possibleBedSpots.Add (houseOrigin.Add (4, 0, 1 + c));
       }
       PlaceBeds (possibleBedSpots);
+      PlaceLoot (possibleBedSpots);
     }
 
     void PlaceBeds (List<Vector3Int> possibleBedSpots)
@@ -81,6 +82,18 @@ namespace ScarabolMods
         } else {
           BlockPlacementHelper.PlaceBlock (bedPosition, BuiltinBlocks.BedXP, Owner);
         }
+      }
+    }
+
+    void PlaceLoot (List<Vector3Int> possibleLootSpots)
+    {
+      int maxLoot = Random.Next (2);
+      var lootType = ItemTypes.IndexLookup.GetIndex (Lootbox.ITEMKEY);
+      for (int c = 0; c < maxLoot && possibleLootSpots.Count > 0; c++) {
+        var spot = Random.Next (possibleLootSpots.Count);
+        var position = possibleLootSpots [spot];
+        possibleLootSpots.RemoveAt (spot);
+        BlockPlacementHelper.PlaceBlock (position, lootType, Owner);
       }
     }
 

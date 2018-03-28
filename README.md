@@ -25,6 +25,8 @@ By default the super permission ("") is required, but can be set to any other pe
 <dl>
 <dt>/farm [maxSize]</dt>
 <dd>Requires permission: <b>mods.scarabol.kingdoms.farm</b><br>Creates a farm with given 'maxSize' amount of fields, right where you are. Fields are only placed on solid flat ground.</dd>
+<dt>/lootbox</dt>
+<dd>Requires permission: <b>mods.scarabol.kingdoms.lootbox</b><br>Simulates finding a lootbox on each call. Permit carefully! Cheaters might spam it...</dd>
 </dl>
 
 More to come...
