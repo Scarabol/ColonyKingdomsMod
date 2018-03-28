@@ -20,7 +20,7 @@ namespace ScarabolMods
     public static void PlaceBlock (Vector3Int position, ushort type, Players.Player player)
     {
       if (!ServerManager.TryChangeBlock (position, type, player)) {
-        Pipliz.Log.WriteError ($"Could not place block at {position}");
+        Log.WriteError ($"Could not place block at {position}");
       }
     }
 

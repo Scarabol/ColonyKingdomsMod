@@ -22,10 +22,12 @@ namespace ScarabolMods
     public Vector3Int Origin;
     public NetworkID NetworkID;
     protected bool Dead;
+    protected LootSpawner LootSpawner;
 
     public NpcKingdom (string kingdomType)
     {
       KingdomType = kingdomType;
+      LootSpawner = new LootSpawner (kingdomType);
     }
 
     public virtual JSONNode GetJson ()
@@ -58,14 +60,24 @@ namespace ScarabolMods
       } else {
         NetworkID = CreateFakeNetworkID (NpcID);
       }
-      KingdomsTracker.RegisterKingdom (this);
+      FinishInitialization ();
     }
 
     public virtual void InitNew ()
     {
       NpcID = KingdomsTracker.GetNextNpcID ();
       NetworkID = CreateFakeNetworkID (NpcID);
+      FinishInitialization ();
+    }
+
+    public virtual void FinishInitialization ()
+    {
       KingdomsTracker.RegisterKingdom (this);
+      ThreadManager.InvokeOnMainThread (delegate {
+        var player = Players.GetPlayer (NetworkID);
+        player.Name = Name;
+      });
+      LootSpawner.Start (NetworkID);
     }
 
     static NetworkID CreateFakeNetworkID (uint npcID)
@@ -77,21 +89,24 @@ namespace ScarabolMods
     {
       new Thread (() => {
         Thread.CurrentThread.IsBackground = true;
-        Log.Write ($"Started AI thread");
         while (!Dead) {
           ThreadManager.InvokeOnMainThread (delegate {
             try {
-              var player = Players.GetPlayer (NetworkID);
-              player.Name = Name;
-              Update (player);
+              Update (Players.GetPlayer (NetworkID));
             } catch (Exception exception) {
               Log.WriteError ($"Exception in kingdom update thread; {exception.Message}");
             }
           });
           Thread.Sleep (5000);
         }
-        KingdomsTracker.UnregisterKingdom (this);
+        AfterDeath ();
       }).Start ();
+    }
+
+    void AfterDeath ()
+    {
+      LootSpawner.Kill ();
+      KingdomsTracker.UnregisterKingdom (this);
     }
 
     protected abstract void Update (Players.Player player);

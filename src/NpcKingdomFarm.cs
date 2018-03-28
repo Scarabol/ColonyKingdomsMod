@@ -52,7 +52,9 @@ namespace ScarabolMods
     {
       if (Build) {
         Build = false;
-        new NpcFarmBuilder (player, Origin, Size).Build ();
+        var builder = new NpcFarmBuilder (player, Origin, Size);
+        builder.Build ();
+        LootSpawner.SetPossibleLootSpots (builder.LootSpots);
       } else if (BedBlockTracker.GetCount (player) < 1) {
         KingdomsTracker.SendNotification ($"Farm at {Origin} is dead! Lost all beds");
         Dead = true;

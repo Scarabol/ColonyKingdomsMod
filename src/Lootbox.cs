@@ -3,7 +3,6 @@ using System.Linq;
 using Pipliz;
 using Pipliz.JSON;
 using Pipliz.Chatting;
-using Permissions;
 using Server.Science;
 using BlockTypes.Builtin;
 
@@ -13,29 +12,35 @@ namespace ScarabolMods
   public static class Lootbox
   {
     public static string ITEMKEY = KingdomsModEntries.MOD_PREFIX + "lootbox";
+    public static readonly int DefaultLootboxMinRespawnDelay = 30;
+    public static readonly int DefaultLootboxMaxRespawnDelay = 90;
 
-    static string SPECIAL_SCIENCE = "special:completeactivescience";
-    static string SPECIAL_DEATH = "special:death";
+    static readonly string SPECIAL_SCIENCE = "special:completeactivescience";
+    static readonly string SPECIAL_DEATH = "special:death";
 
-    static List<GambleItem> Items = new List<GambleItem> {
-      new GambleItem (SPECIAL_SCIENCE, 1, 1, 1),
-      new GambleItem (SPECIAL_DEATH, 0, 1, 1),
-      new GambleItem ("sciencebagcolony", 15, 1, 1),
-      new GambleItem ("ironwrought", 25, 1, 3),
-      new GambleItem ("steelingot", 25, 1, 5),
-      new GambleItem ("sciencebagadvanced", 50, 1, 1),
-      new GambleItem ("lanternred", 8, 1, 2),
-      new GambleItem ("lanternblue", 8, 1, 2),
-      new GambleItem ("lanterncyan", 8, 1, 2),
-      new GambleItem ("lanternpink", 8, 1, 2),
-      new GambleItem ("lanterngreen", 8, 1, 2),
-      new GambleItem ("lanternwhite", 8, 1, 2),
-      new GambleItem ("lanternorange", 8, 1, 2),
-      new GambleItem ("lanternyellow", 8, 1, 2),
-      new GambleItem ("copper", 75, 10, 20),
-      new GambleItem ("silveringot", 75, 5, 10),
-      new GambleItem ("bread", 125, 10, 20),
-      new GambleItem ("air", 545, 1, 1)
+    static readonly Dictionary<string, LootboxProperties> LootboxPropertiesByKingdomType = new Dictionary<string, LootboxProperties> {
+      { "farm", new LootboxProperties(1, 2, DefaultLootboxMinRespawnDelay, DefaultLootboxMaxRespawnDelay) }
+    };
+
+    static List<LootOption> LootOptions = new List<LootOption> {
+      new LootOption (SPECIAL_SCIENCE, 1, 1, 1),
+      new LootOption (SPECIAL_DEATH, 0, 1, 1),
+      new LootOption ("sciencebagcolony", 15, 1, 1),
+      new LootOption ("ironwrought", 25, 1, 3),
+      new LootOption ("steelingot", 25, 1, 5),
+      new LootOption ("sciencebagadvanced", 50, 1, 1),
+      new LootOption ("lanternred", 8, 1, 2),
+      new LootOption ("lanternblue", 8, 1, 2),
+      new LootOption ("lanterncyan", 8, 1, 2),
+      new LootOption ("lanternpink", 8, 1, 2),
+      new LootOption ("lanterngreen", 8, 1, 2),
+      new LootOption ("lanternwhite", 8, 1, 2),
+      new LootOption ("lanternorange", 8, 1, 2),
+      new LootOption ("lanternyellow", 8, 1, 2),
+      new LootOption ("copper", 75, 10, 20),
+      new LootOption ("silveringot", 75, 5, 10),
+      new LootOption ("bread", 125, 10, 20),
+      new LootOption ("air", 545, 1, 1)
     };
 
     [ModLoader.ModCallback (ModLoader.EModCallbackType.AfterAddingBaseTypes, "scarabol.kingdoms.lootbox.addrawtypes")]
@@ -64,13 +69,13 @@ namespace ScarabolMods
     public static void DoGamble (Players.Player player)
     {
       if (player != null) {
-        var priceItem = PickPrice ();
+        var priceItem = PickLoot ();
         if (SPECIAL_SCIENCE.Equals (priceItem.Typename)) {
           Chat.Send (player, "Jackpot! Just found the solution to your current research");
           ScienceManager.GetPlayerManager (player).AddActiveResearchProgress (1000000);
         } else if (SPECIAL_DEATH.Equals (priceItem.Typename)) {
           Chat.Send (player, "Fatal! Something inside killed you");
-          Players.OnDeath (player);
+          Players.TakeHit (player, 1000000);
         } else if (!ItemTypes.IndexLookup.TryGetIndex (priceItem.Typename, out ushort priceType)) {
           Log.WriteError ($"Unknown gambling price {priceItem.Typename} won by {player}");
           Chat.Send (player, "I have bad feelings about this");
@@ -85,90 +90,147 @@ namespace ScarabolMods
 
     public static JSONNode GetJson ()
     {
-      JSONNode result = new JSONNode ();
-      foreach (GambleItem item in Items) {
-        JSONNode itemNode = new JSONNode ();
-        itemNode.SetAs ("Quantity", item.Quantity);
-        itemNode.SetAs ("MinStackSize", item.MinStackSize);
-        itemNode.SetAs ("MaxStackSize", item.MaxStackSize);
-        result.SetAs (item.Typename, itemNode);
+      var jsonLootOptions = new JSONNode ();
+      foreach (LootOption item in LootOptions) {
+        jsonLootOptions.SetAs (item.Typename, item.GetJson ());
       }
+      var result = new JSONNode ();
+      result.SetAs ("LootOptions", jsonLootOptions);
+      var jsonLootboxProperties = new JSONNode ();
+      foreach (var entry in LootboxPropertiesByKingdomType) {
+        jsonLootboxProperties.SetAs (entry.Key, entry.Value.GetJson ());
+      }
+      result.SetAs ("LootboxProperties", jsonLootboxProperties);
       return result;
     }
 
     public static void SetFromJson (JSONNode jsonNode)
     {
-      Items.Clear ();
-      if (jsonNode != null && jsonNode.NodeType == NodeType.Object) {
-        foreach (var item in jsonNode.LoopObject ()) {
-          var jsonItem = item.Value;
-          Items.Add (new GambleItem (item.Key, jsonItem.GetAsOrDefault ("Quantity", 0), jsonItem.GetAsOrDefault ("MinStackSize", 1), jsonItem.GetAsOrDefault ("MaxStackSize", 1)));
+      if (jsonNode.TryGetAs ("LootOptions", out JSONNode jsonLootOptions)) {
+        LootOptions.Clear ();
+        foreach (var jsonLootOption in jsonLootOptions.LoopObject ()) {
+          LootOptions.Add (new LootOption (jsonLootOption.Key, jsonLootOption.Value));
+        }
+      }
+      if (jsonNode.TryGetAs ("LootboxProperties", out JSONNode jsonLootboxProperties)) {
+        LootboxPropertiesByKingdomType.Clear ();
+        foreach (var jsonKingdomLootbox in jsonLootboxProperties.LoopObject ()) {
+          LootboxPropertiesByKingdomType.Add (jsonKingdomLootbox.Key, new LootboxProperties (jsonKingdomLootbox.Value));
         }
       }
     }
 
-    static GamblePrice PickPrice ()
+    public static LootboxProperties GetLootboxProperties (string kingdomType)
     {
-      var index = Random.Next (Items.Sum (item => item.Quantity));
-      foreach (GambleItem item in Items) {
-        index -= item.Quantity;
+      if (LootboxPropertiesByKingdomType.TryGetValue (kingdomType, out var properties)) {
+        return properties;
+      }
+      Log.Write ($"Could not get lootbox properties for {kingdomType} returning default values");
+      return new LootboxProperties (0, 0, DefaultLootboxMinRespawnDelay, DefaultLootboxMaxRespawnDelay);
+    }
+
+    static Loot PickLoot ()
+    {
+      var index = Random.Next (LootOptions.Sum (item => item.WeightedProbability));
+      foreach (LootOption item in LootOptions) {
+        index -= item.WeightedProbability;
         if (index <= 0) {
           var amount = item.MinStackSize + Random.Next (item.MaxStackSize - item.MinStackSize);
-          return new GamblePrice (item.Typename, amount);
+          return new Loot (item.Typename, amount);
         }
       }
-      return new GamblePrice ("air", 0);
+      return new Loot ("air", 0);
     }
 
-    class GamblePrice
+    class Loot
     {
       public readonly string Typename;
       public readonly int Amount;
 
-      public GamblePrice (string typename, int amount)
+      public Loot (string typename, int amount)
       {
         Typename = typename;
         Amount = amount;
       }
     }
 
-    class GambleItem
+    class LootOption
     {
       public readonly string Typename;
-      public readonly int Quantity;
+      public readonly int WeightedProbability;
       public readonly int MinStackSize;
       public readonly int MaxStackSize;
 
-      public GambleItem (string typename, int quantity, int minStackSize, int maxStackSize)
+      public LootOption (string typename, int weightedProbability, int minStackSize, int maxStackSize)
       {
         Typename = typename;
-        Quantity = quantity;
+        WeightedProbability = weightedProbability;
         MinStackSize = minStackSize;
         MaxStackSize = maxStackSize;
+      }
+
+      public LootOption (string typename, JSONNode jsonNode)
+      {
+        Typename = typename;
+        WeightedProbability = jsonNode.GetAsOrDefault ("WeightedProbability", 0);
+        MinStackSize = jsonNode.GetAsOrDefault ("MinStackSize", 1);
+        MaxStackSize = jsonNode.GetAsOrDefault ("MaxStackSize", 1);
+      }
+
+      public JSONNode GetJson ()
+      {
+        var result = new JSONNode ();
+        result.SetAs ("WeightedProbability", WeightedProbability);
+        result.SetAs ("MinStackSize", MinStackSize);
+        result.SetAs ("MaxStackSize", MaxStackSize);
+        return result;
       }
     }
   }
 
-  [ModLoader.ModManager]
-  public class LootboxChatCommand : ChatCommands.IChatCommand
+  public class LootboxProperties
   {
-    [ModLoader.ModCallback (ModLoader.EModCallbackType.AfterItemTypesDefined, "scarabol.kingdoms.lootbox.registercommand")]
-    public static void AfterItemTypesDefined ()
+    public readonly int MinCount;
+    public readonly int MaxCount;
+    public int MinRespawnDelayMinutes;
+    public int MaxRespawnDelayMinutes;
+
+    public LootboxProperties (int minCount, int maxCount, int minRespawnDelayMinutes, int maxRespawnDelayMinutes)
     {
-      ChatCommands.CommandManager.RegisterCommand (new LootboxChatCommand ());
+      MinCount = minCount;
+      MaxCount = maxCount;
+      SetRespawnDelayMinutes (minRespawnDelayMinutes, maxRespawnDelayMinutes);
     }
 
-    public bool IsCommand (string chat)
+    public LootboxProperties (JSONNode jsonNode)
     {
-      return chat.Equals ("/lootbox");
+      MinCount = jsonNode.GetAsOrDefault ("MinCount", 0);
+      MaxCount = jsonNode.GetAsOrDefault ("MaxCount", 0);
+      SetRespawnDelayMinutes (jsonNode.GetAsOrDefault ("MinRespawnDelayMinutes", Lootbox.DefaultLootboxMinRespawnDelay), jsonNode.GetAsOrDefault ("MaxRespawnDelayMinutes", Lootbox.DefaultLootboxMaxRespawnDelay));
     }
 
-    public bool TryDoCommand (Players.Player causedBy, string chattext)
+    public JSONNode GetJson ()
     {
-      if (PermissionsManager.CheckAndWarnPermission (causedBy, KingdomsModEntries.MOD_PREFIX + "lootbox")) {
-        Lootbox.DoGamble (causedBy);
+      var result = new JSONNode ();
+      result.SetAs ("MinCount", MinCount);
+      result.SetAs ("MaxCount", MaxCount);
+      result.SetAs ("MinRespawnDelayMinutes", MinRespawnDelayMinutes);
+      result.SetAs ("MaxRespawnDelayMinutes", MaxRespawnDelayMinutes);
+      return result;
+    }
+
+    void SetRespawnDelayMinutes (int minMinutes, int maxMinutes)
+    {
+      if (minMinutes < 1) {
+        Log.WriteError ($"Loot minimal respawn delay value forced to 1. Input value '{minMinutes}' is too low");
+        minMinutes = 1;
       }
-      return true;
+      MinRespawnDelayMinutes = minMinutes;
+      if (maxMinutes < MinRespawnDelayMinutes) {
+        Log.WriteError ($"Loot maximum respawn delay value forced to {MinRespawnDelayMinutes}. Input value '{maxMinutes}' is to low");
+        maxMinutes = MinRespawnDelayMinutes;
+      }
+      MaxRespawnDelayMinutes = maxMinutes;
     }
   }
 }

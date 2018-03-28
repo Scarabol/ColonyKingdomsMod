@@ -122,7 +122,7 @@ namespace ScarabolMods
           Log.Write ($"Loaded {Count} kingdoms from json");
         }
       } catch (Exception exception) {
-        Log.WriteError (string.Format ("Exception while loading kingdoms; {0}", exception.Message));
+        Log.WriteError ($"Exception while loading kingdoms; {exception.Message}");
       }
     }
 
@@ -148,10 +148,10 @@ namespace ScarabolMods
           }
         }
         jsonFileNode.SetAs ("kingdoms", jsonKingdoms);
-        JSON.Serialize (JsonFilePath, jsonFileNode, 2);
+        JSON.Serialize (JsonFilePath, jsonFileNode, 3);
         Log.Write ($"Saved {Count} kingdoms to json");
       } catch (Exception exception) {
-        Log.WriteError (string.Format ("Exception while saving kingdoms; {0}", exception.Message));
+        Log.WriteError ($"Exception while saving kingdoms; {exception.Message}");
       }
     }
 

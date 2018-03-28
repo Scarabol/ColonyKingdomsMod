@@ -49,7 +49,7 @@ namespace ScarabolMods
         NpcKingdomFarm.Create (farmPosition, size).InitNew ();
         Chat.Send (causedBy, $"You placed a farm at {farmPosition} with size {size}");
       } catch (Exception exception) {
-        Log.WriteError (string.Format ("Exception while parsing command; {0} - {1}", exception.Message, exception.StackTrace));
+        Log.WriteError ($"Exception while parsing command; {exception.Message} - {exception.StackTrace}");
       }
       return true;
     }
