@@ -6,6 +6,7 @@ using Pipliz.JSON;
 using Pipliz.Threading;
 using Steamworks;
 using BlockTypes.Builtin;
+using NPC;
 
 namespace ScarabolMods
 {
@@ -99,14 +100,19 @@ namespace ScarabolMods
           });
           Thread.Sleep (5000);
         }
-        AfterDeath ();
+        Kill ();
       }).Start ();
     }
 
-    void AfterDeath ()
+    public void Kill ()
     {
+      Dead = true;
       LootSpawner.Kill ();
       KingdomsTracker.UnregisterKingdom (this);
+      ThreadManager.InvokeOnMainThread (delegate {
+        var followers = new List<NPCBase> (Colony.Get (Players.GetPlayer (NetworkID)).Followers);
+        followers.ForEach (follower => follower.OnDeath ());
+      });
     }
 
     protected abstract void Update (Players.Player player);

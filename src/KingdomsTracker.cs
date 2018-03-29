@@ -2,6 +2,7 @@
 using System.IO;
 using System.Threading;
 using System.Collections.Generic;
+using System.Linq;
 using Pipliz;
 using Pipliz.JSON;
 using Pipliz.Chatting;
@@ -47,6 +48,21 @@ namespace ScarabolMods
           KingdomsLock.ExitWriteLock ();
         }
       }
+    }
+
+    public static List<NpcKingdom> GetAllByType (string kingdomType)
+    {
+      return Kingdoms.FindAll (kingdom => kingdom.KingdomType.Equals (kingdomType));
+    }
+
+    public static bool TryGetClosest (string kingdomType, Vector3Int position, out NpcKingdom kingdom)
+    {
+      if (Kingdoms.Count < 1) {
+        kingdom = null;
+        return false;
+      }
+      kingdom = GetAllByType (kingdomType).OrderBy (npcKingdom => Pipliz.Math.ManhattanDistance (position, npcKingdom.Origin)).First ();
+      return true;
     }
 
     public static void SendNotification (string notification)
