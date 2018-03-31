@@ -19,7 +19,7 @@ namespace ScarabolMods
     static readonly string SPECIAL_DEATH = "special:death";
 
     static readonly Dictionary<string, LootboxProperties> LootboxPropertiesByKingdomType = new Dictionary<string, LootboxProperties> {
-      { "farm", new LootboxProperties(1, 2, DefaultLootboxMinRespawnDelay, DefaultLootboxMaxRespawnDelay) }
+      { "farm", new LootboxProperties (1, 2, DefaultLootboxMinRespawnDelay, DefaultLootboxMaxRespawnDelay) }
     };
 
     static List<LootOption> LootOptions = new List<LootOption> {
@@ -70,13 +70,14 @@ namespace ScarabolMods
     {
       if (player != null) {
         var priceItem = PickLoot ();
+        ushort priceType;
         if (SPECIAL_SCIENCE.Equals (priceItem.Typename)) {
           Chat.Send (player, "Jackpot! Just found the solution to your current research");
           ScienceManager.GetPlayerManager (player).AddActiveResearchProgress (1000000);
         } else if (SPECIAL_DEATH.Equals (priceItem.Typename)) {
           Chat.Send (player, "Fatal! Something inside killed you");
           Players.TakeHit (player, 1000000);
-        } else if (!ItemTypes.IndexLookup.TryGetIndex (priceItem.Typename, out ushort priceType)) {
+        } else if (!ItemTypes.IndexLookup.TryGetIndex (priceItem.Typename, out priceType)) {
           Log.WriteError ($"Unknown gambling price {priceItem.Typename} won by {player}");
           Chat.Send (player, "I have bad feelings about this");
         } else if (priceType == BuiltinBlocks.Air) {
@@ -106,13 +107,15 @@ namespace ScarabolMods
 
     public static void SetFromJson (JSONNode jsonNode)
     {
-      if (jsonNode.TryGetAs ("LootOptions", out JSONNode jsonLootOptions)) {
+      JSONNode jsonLootOptions;
+      if (jsonNode.TryGetAs ("LootOptions", out jsonLootOptions)) {
         LootOptions.Clear ();
         foreach (var jsonLootOption in jsonLootOptions.LoopObject ()) {
           LootOptions.Add (new LootOption (jsonLootOption.Key, jsonLootOption.Value));
         }
       }
-      if (jsonNode.TryGetAs ("LootboxProperties", out JSONNode jsonLootboxProperties)) {
+      JSONNode jsonLootboxProperties;
+      if (jsonNode.TryGetAs ("LootboxProperties", out jsonLootboxProperties)) {
         LootboxPropertiesByKingdomType.Clear ();
         foreach (var jsonKingdomLootbox in jsonLootboxProperties.LoopObject ()) {
           LootboxPropertiesByKingdomType.Add (jsonKingdomLootbox.Key, new LootboxProperties (jsonKingdomLootbox.Value));
@@ -122,7 +125,8 @@ namespace ScarabolMods
 
     public static LootboxProperties GetLootboxProperties (string kingdomType)
     {
-      if (LootboxPropertiesByKingdomType.TryGetValue (kingdomType, out var properties)) {
+      LootboxProperties properties;
+      if (LootboxPropertiesByKingdomType.TryGetValue (kingdomType, out properties)) {
         return properties;
       }
       Log.Write ($"Could not get lootbox properties for {kingdomType} returning default values");

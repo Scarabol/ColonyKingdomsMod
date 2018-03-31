@@ -128,7 +128,8 @@ namespace ScarabolMods
       var max = center.Add (5, 0, 5);
       for (int x = min.x; x < max.x; x++) {
         for (int z = min.z; z < max.z; z++) {
-          if (!World.TryIsSolid (new Vector3Int (x, center.y - 1, z), out bool solid) || !solid) {
+          bool solid;
+          if (!World.TryIsSolid (new Vector3Int (x, center.y - 1, z), out solid) || !solid) {
             return false;
           }
         }
@@ -142,7 +143,8 @@ namespace ScarabolMods
       for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
           for (int z = 0; z < depth; z++) {
-            if (!World.TryGetTypeAt (start.Add (x, y, z), out ushort type) || type != BuiltinBlocks.Air) {
+            ushort type;
+            if (!World.TryGetTypeAt (start.Add (x, y, z), out type) || type != BuiltinBlocks.Air) {
               return false;
             }
           }

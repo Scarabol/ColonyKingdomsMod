@@ -83,7 +83,8 @@ namespace ScarabolMods
     public static void Load ()
     {
       try {
-        if (JSON.Deserialize (JsonFilePath, out JSONNode jsonFileNode, false)) {
+        JSONNode jsonFileNode;
+        if (JSON.Deserialize (JsonFilePath, out jsonFileNode, false)) {
           try {
             KingdomsLock.EnterWriteLock ();
             Kingdoms.Clear ();
@@ -94,20 +95,24 @@ namespace ScarabolMods
           }
           jsonFileNode.TryGetAsOrDefault ("NextNpcID", out NextNpcID, DefaultNextNpcID);
           jsonFileNode.TryGetAsOrDefault ("NotifyPermission", out NotifyPermission, DefaultNotifyPermission);
-          if (jsonFileNode.TryGetAs ("spawner", out JSONNode jsonSpawner) && jsonSpawner.NodeType == NodeType.Object) {
+          JSONNode jsonSpawner;
+          if (jsonFileNode.TryGetAs ("spawner", out jsonSpawner) && jsonSpawner.NodeType == NodeType.Object) {
             KingdomSpawner.SetFromJson (jsonSpawner);
           } else {
             Log.Write ($"kingdom spawner not configured in {JsonFilePath}, loading defaults");
           }
-          if (jsonFileNode.TryGetAs ("loot", out JSONNode jsonLoot)) {
+          JSONNode jsonLoot;
+          if (jsonFileNode.TryGetAs ("loot", out jsonLoot)) {
             Lootbox.SetFromJson (jsonLoot);
           }
-          if (!jsonFileNode.TryGetAs ("kingdoms", out JSONNode jsonKingdoms) || jsonKingdoms.NodeType != NodeType.Array) {
+          JSONNode jsonKingdoms;
+          if (!jsonFileNode.TryGetAs ("kingdoms", out jsonKingdoms) || jsonKingdoms.NodeType != NodeType.Array) {
             Log.WriteError ($"No 'kingdoms' array found in '{JsonFilePath}'");
             return;
           }
           foreach (JSONNode jsonNode in jsonKingdoms.LoopArray ()) {
-            if (jsonNode.TryGetAs ("KingdomType", out string type)) {
+            string type;
+            if (jsonNode.TryGetAs ("KingdomType", out type)) {
               NpcKingdom kingdom;
               if ("farm".Equals (type)) {
                 kingdom = new NpcKingdomFarm ();

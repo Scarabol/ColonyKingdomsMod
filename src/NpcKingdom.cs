@@ -128,7 +128,8 @@ namespace ScarabolMods
         for (int y = PrimaryMinY; y < PrimaryMaxY; y++) {
           for (int z = -PrimaryRange; z < PrimaryRange; z++) {
             Vector3Int checkPosition = Origin.Add (x, y, z);
-            if (!World.TryGetTypeAt (checkPosition, out ushort spotType) || spotType != BuiltinBlocks.Air) {
+            ushort spotType;
+            if (!World.TryGetTypeAt (checkPosition, out spotType) || spotType != BuiltinBlocks.Air) {
               return false;
             }
           }

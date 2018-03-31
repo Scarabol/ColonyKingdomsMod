@@ -46,7 +46,8 @@ namespace ScarabolMods
           }
           var lootType = ItemTypes.IndexLookup.GetIndex (Lootbox.ITEMKEY);
           foreach (var oldPlacedLoot in new List<Vector3Int> (PlacedLoot)) {
-            if (World.TryGetTypeAt (oldPlacedLoot, out ushort actualType) && actualType != lootType) {
+            ushort actualType;
+            if (World.TryGetTypeAt (oldPlacedLoot, out actualType) && actualType != lootType) {
               PlacedLoot.Remove (oldPlacedLoot);
             }
           }
@@ -57,7 +58,8 @@ namespace ScarabolMods
             var spot = Pipliz.Random.Next (currentSpotList.Count);
             var position = currentSpotList [spot];
             currentSpotList.RemoveAt (spot);
-            if (World.TryGetTypeAt (position, out ushort actualType) && actualType == BuiltinBlocks.Air) {
+            ushort actualType;
+            if (World.TryGetTypeAt (position, out actualType) && actualType == BuiltinBlocks.Air) {
               PlacedLoot.Add (position);
               BlockPlacementHelper.PlaceBlock (position, lootType, player);
               c++;
