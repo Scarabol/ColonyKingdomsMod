@@ -21,10 +21,10 @@ namespace ScarabolMods
           NpcKingdom closestFarm;
           if (chattext.Equals ($"/kill{KingdomType} all")) {
             KingdomsTracker.GetAllByType (KingdomType).ForEach (kingdom => kingdom.Kill ());
-            KingdomsTracker.SendNotification ($"killed all {KingdomType}");
+            KingdomsTracker.SendKingdomNotification ($"killed all {KingdomType}");
           } else if (KingdomsTracker.TryGetClosest (KingdomType, causedBy.VoxelPosition, out closestFarm)) {
             closestFarm.Kill ();
-            KingdomsTracker.SendNotification ($"Killed {KingdomType} at {closestFarm.Origin}");
+            KingdomsTracker.SendKingdomNotification ($"Killed {KingdomType} at {closestFarm.Origin}");
           }
         }
       } catch (Exception exception) {

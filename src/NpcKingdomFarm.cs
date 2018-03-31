@@ -46,7 +46,7 @@ namespace ScarabolMods
       base.InitNew ();
       Name = "NPC-Farmer";
       Build = true;
-      KingdomsTracker.SendNotification ($"Placed a {KingdomType} of size {Size} at {Origin}");
+      KingdomsTracker.SendKingdomNotification ($"Placed a {KingdomType} of size {Size} at {Origin}");
     }
 
     protected override void Update (Players.Player player)
@@ -57,7 +57,7 @@ namespace ScarabolMods
         builder.Build ();
         LootSpawner.SetPossibleLootSpots (builder.LootSpots);
       } else if (BedBlockTracker.GetCount (player) < 1) {
-        KingdomsTracker.SendNotification ($"Farm at {Origin} is dead! Lost all beds");
+        KingdomsTracker.SendKingdomNotification ($"Farm at {Origin} is dead! Lost all beds");
         Kill ();
       } else {
         var stockpile = Stockpile.GetStockPile (player);

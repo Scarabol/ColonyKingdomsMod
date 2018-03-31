@@ -63,6 +63,7 @@ namespace ScarabolMods
               PlacedLoot.Add (position);
               BlockPlacementHelper.PlaceBlock (position, lootType, player);
               c++;
+              KingdomsTracker.SendLootboxNotification ($"Unclaimed lootbox at {position}");
             }
           }
         } catch (Exception exception) {
