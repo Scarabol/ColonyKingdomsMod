@@ -51,6 +51,18 @@ namespace ScarabolMods
       }
     }
 
+    public static List<NpcKingdom> GetAll ()
+    {
+      try {
+        KingdomsLock.EnterReadLock ();
+        return new List<NpcKingdom> (Kingdoms);
+      } finally {
+        if (KingdomsLock.IsReadLockHeld) {
+          KingdomsLock.ExitReadLock ();
+        }
+      }
+    }
+
     public static List<NpcKingdom> GetAllByType (string kingdomType)
     {
       try {
