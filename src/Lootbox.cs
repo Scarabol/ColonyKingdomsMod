@@ -84,7 +84,9 @@ namespace ScarabolMods
           Chat.Send (player, "You found an empty box :-(");
         } else {
           Chat.Send (player, $"You found {priceItem.Amount} x {priceItem.Typename} as loot!");
-          Stockpile.GetStockPile (player).Add (priceType, priceItem.Amount);
+          if (!Inventory.GetInventory (player).TryAdd (priceType, priceItem.Amount)) {
+            Stockpile.GetStockPile (player).Add (priceType, priceItem.Amount);
+          }
         }
       }
     }
