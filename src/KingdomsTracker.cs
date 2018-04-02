@@ -214,7 +214,7 @@ namespace ScarabolMods
       try {
         KingdomsLock.EnterReadLock ();
         foreach (NpcKingdom kingdom in Kingdoms) {
-          if (IsInRange (data.CheckedChunk.Position, KingdomsModEntries.CHUNK_SIZE, kingdom.Origin, kingdom.Range)) {
+          if (kingdom.IsInRange (data.CheckedChunk.Position, KingdomsModEntries.CHUNK_SIZE)) {
             data.Result = true;
             return;
           }
@@ -224,16 +224,6 @@ namespace ScarabolMods
           KingdomsLock.ExitReadLock ();
         }
       }
-    }
-
-    static bool IsInRange (Vector3Int position1, int range1, Vector3Int position2, int range2)
-    {
-      var dx = position1.x - position2.x;
-      int dy = position1.y - position2.y;
-      int dz = position1.z - position2.z;
-      var distanceSquare = Pipliz.Math.Pow2 (dx) + Pipliz.Math.Pow2 (dy) + Pipliz.Math.Pow2 (dz);
-      var maxDist = Pipliz.Math.Pow2 (range1 + range2);
-      return distanceSquare < maxDist;
     }
   }
 }

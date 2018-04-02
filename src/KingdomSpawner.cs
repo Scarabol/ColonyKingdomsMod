@@ -15,12 +15,14 @@ namespace ScarabolMods
     static readonly int DefaultDelayBetweenPlacingAttempts = 10000;
     static readonly int DefaultNumOfSpotsToCheckPerAttempt = 50;
     static readonly int DefaultDelayBetweenSpotChecks = 1000;
+    static readonly int DefaultMinDistanceToBanners = 200;
 
     static int MaxNumberOfKingdoms = DefaultMaxNumberOfKingdoms;
     static int MaxRangeFromSpawn = DefaultMaxRangeFromSpawn;
     static int DelayBetweenPlacingAttempts = DefaultDelayBetweenPlacingAttempts;
     static int NumOfSpotsToCheckPerAttempt = DefaultNumOfSpotsToCheckPerAttempt;
     static int DelayBetweenSpotChecks = DefaultDelayBetweenSpotChecks;
+    static int MinDistanceToBanners = DefaultMinDistanceToBanners;
 
     static HashSet<Vector3Int> currentlyUsedChunks = new HashSet<Vector3Int> ();
     static readonly ReaderWriterLockSlim currentlyUsedChunksLock = new ReaderWriterLockSlim ();
@@ -33,6 +35,7 @@ namespace ScarabolMods
       result.SetAs ("DelayBetweenPlacingAttempts", DelayBetweenPlacingAttempts);
       result.SetAs ("NumOfSpotsToCheckPerAttempt", NumOfSpotsToCheckPerAttempt);
       result.SetAs ("DelayBetweenSpotChecks", DelayBetweenSpotChecks);
+      result.SetAs ("MinDistanceToBanners", MinDistanceToBanners);
       return result;
     }
 
@@ -43,6 +46,7 @@ namespace ScarabolMods
       jsonNode.TryGetAsOrDefault ("DelayBetweenPlacingAttempts", out DelayBetweenPlacingAttempts, DefaultDelayBetweenPlacingAttempts);
       jsonNode.TryGetAsOrDefault ("NumOfSpotsToCheckPerAttempt", out NumOfSpotsToCheckPerAttempt, DefaultNumOfSpotsToCheckPerAttempt);
       jsonNode.TryGetAsOrDefault ("DelayBetweenSpotChecks", out DelayBetweenSpotChecks, DefaultDelayBetweenSpotChecks);
+      jsonNode.TryGetAsOrDefault ("MinDistanceToBanners", out MinDistanceToBanners, DefaultMinDistanceToBanners);
     }
 
     [ModLoader.ModCallback (ModLoader.EModCallbackType.AfterNetworkSetup, "scarabol.kingdoms.kingdomspawner.afternetworksetup")]
@@ -56,24 +60,27 @@ namespace ScarabolMods
           try {
             if (KingdomsTracker.Count < MaxNumberOfKingdoms) {
               for (int c = 0; c < NumOfSpotsToCheckPerAttempt; c++) {
-                var farmPosition = GetRandomSpot (MaxRangeFromSpawn);
+                var kingdomPosition = GetRandomSpot (MaxRangeFromSpawn);
                 var farmSize = 1 + Pipliz.Random.Next (NpcFarmBuilder.MAX_SIZE);
-                var npcKingdom = NpcFarm.Create (farmPosition, farmSize);
-                LoadChunksBlocking (npcKingdom.GetPrimaryChunkPositions ());
-                if (npcKingdom.IsAreaClear ()) {
-                  LoadChunksBlocking (npcKingdom.GetTotalChunkPositions ());
-                  npcKingdom.InitNew ();
-                  if (KingdomsTracker.Count >= MaxNumberOfKingdoms) {
-                    Log.Write ($"Reached maximum number ({MaxNumberOfKingdoms}) of kingdoms");
+                var npcKingdom = NpcFarm.Create (kingdomPosition, farmSize);
+                var closestBanner = BannerTracker.GetClosest (kingdomPosition, MinDistanceToBanners);
+                if (closestBanner == null) {
+                  LoadChunksBlocking (npcKingdom.GetPrimaryChunkPositions ());
+                  if (npcKingdom.IsAreaClear ()) {
+                    LoadChunksBlocking (npcKingdom.GetTotalChunkPositions ());
+                    npcKingdom.InitNew ();
+                    if (KingdomsTracker.Count >= MaxNumberOfKingdoms) {
+                      Log.Write ($"Reached maximum number ({MaxNumberOfKingdoms}) of kingdoms");
+                    }
+                    break;
                   }
-                  break;
-                }
-                try {
-                  currentlyUsedChunksLock.EnterWriteLock ();
-                  currentlyUsedChunks.Clear ();
-                } finally {
-                  if (currentlyUsedChunksLock.IsWriteLockHeld) {
-                    currentlyUsedChunksLock.ExitWriteLock ();
+                  try {
+                    currentlyUsedChunksLock.EnterWriteLock ();
+                    currentlyUsedChunks.Clear ();
+                  } finally {
+                    if (currentlyUsedChunksLock.IsWriteLockHeld) {
+                      currentlyUsedChunksLock.ExitWriteLock ();
+                    }
                   }
                 }
                 Thread.Sleep (DelayBetweenSpotChecks);

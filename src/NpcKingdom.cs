@@ -117,7 +117,7 @@ namespace ScarabolMods
 
     protected abstract void Update (Players.Player player);
 
-    public int Range {
+    int KingdomRange {
       get {
         return (System.Math.Max (RangeInChunks, HeightInChunks) + KingdomsModEntries.SAFETY_RANGE_CHUNKS) * KingdomsModEntries.CHUNK_SIZE;
       }
@@ -146,7 +146,7 @@ namespace ScarabolMods
 
     public HashSet<Vector3Int> GetTotalChunkPositions ()
     {
-      return GetChunks (Origin, Range, -Range, Range);
+      return GetChunks (Origin, KingdomRange, -KingdomRange, KingdomRange);
     }
 
     static HashSet<Vector3Int> GetChunks (Vector3Int center, int range, int yMin, int yMax)
@@ -161,6 +161,16 @@ namespace ScarabolMods
         }
       }
       return result;
+    }
+
+    public bool IsInRange (Vector3Int position, int range)
+    {
+      var dx = position.x - Origin.x;
+      int dy = position.y - Origin.y;
+      int dz = position.z - Origin.z;
+      var distanceSquare = Pipliz.Math.Pow2 (dx) + Pipliz.Math.Pow2 (dy) + Pipliz.Math.Pow2 (dz);
+      var maxDist = Pipliz.Math.Pow2 (range + KingdomRange);
+      return distanceSquare < maxDist;
     }
   }
 }
