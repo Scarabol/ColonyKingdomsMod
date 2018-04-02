@@ -53,12 +53,19 @@ namespace ScarabolMods
 
     public static List<NpcKingdom> GetAllByType (string kingdomType)
     {
-      return Kingdoms.FindAll (kingdom => kingdom.KingdomType.Equals (kingdomType));
+      try {
+        KingdomsLock.EnterReadLock ();
+        return Kingdoms.FindAll (kingdom => kingdom.KingdomType.Equals (kingdomType));
+      } finally {
+        if (KingdomsLock.IsReadLockHeld) {
+          KingdomsLock.ExitReadLock ();
+        }
+      }
     }
 
     public static bool TryGetClosest (string kingdomType, Vector3Int position, out NpcKingdom kingdom)
     {
-      if (Kingdoms.Count < 1) {
+      if (Count < 1) {
         kingdom = null;
         return false;
       }
