@@ -162,7 +162,7 @@ namespace ScarabolMods
             if (jsonNode.TryGetAs ("KingdomType", out type)) {
               NpcKingdom kingdom;
               if ("farm".Equals (type)) {
-                kingdom = new NpcKingdomFarm ();
+                kingdom = new NpcFarm ();
               } else {
                 Log.WriteError ($"Unknown npc kingdom type {type}");
                 continue;

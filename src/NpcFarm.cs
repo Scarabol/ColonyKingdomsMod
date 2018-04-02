@@ -6,20 +6,20 @@ using NPC;
 
 namespace ScarabolMods
 {
-  public class NpcKingdomFarm : NpcKingdom
+  public class NpcFarm : NpcKingdom
   {
     int Size;
     bool Build;
 
-    public static NpcKingdomFarm Create (Vector3Int farmPosition, int size)
+    public static NpcFarm Create (Vector3Int farmPosition, int size)
     {
-      var result = new NpcKingdomFarm ();
+      var result = new NpcFarm ();
       result.Origin = farmPosition;
       result.Size = size;
       return result;
     }
 
-    public NpcKingdomFarm () : base ("farm")
+    public NpcFarm () : base ("farm")
     {
       RangeInChunks = 2;
       HeightInChunks = 1;

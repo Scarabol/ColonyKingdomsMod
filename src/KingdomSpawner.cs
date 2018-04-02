@@ -58,7 +58,7 @@ namespace ScarabolMods
               for (int c = 0; c < NumOfSpotsToCheckPerAttempt; c++) {
                 var farmPosition = GetRandomSpot (MaxRangeFromSpawn);
                 var farmSize = 1 + Pipliz.Random.Next (NpcFarmBuilder.MAX_SIZE);
-                var npcKingdom = NpcKingdomFarm.Create (farmPosition, farmSize);
+                var npcKingdom = NpcFarm.Create (farmPosition, farmSize);
                 LoadChunksBlocking (npcKingdom.GetPrimaryChunkPositions ());
                 if (npcKingdom.IsAreaClear ()) {
                   LoadChunksBlocking (npcKingdom.GetTotalChunkPositions ());
